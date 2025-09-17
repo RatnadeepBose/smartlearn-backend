@@ -14,10 +14,11 @@ app.use(bodyParser.json());
 
 // Handle enquiry submissions
 app.post("/enquiry", (req, res) => {
-  const { name, email, message, className, subject } = req.body;
+  const { name, email, phone, message, className, subject } = req.body;
 
-  if (!name || !email || !message) {
-    return res.status(400).json({ status: "error", message: "All fields required" });
+  // Validate mandatory fields
+  if (!name || !email || !phone || !message) {
+    return res.status(400).json({ status: "error", message: "Name, Email, Phone, and Message are required!" });
   }
 
   let enquiries = [];
@@ -30,6 +31,7 @@ app.post("/enquiry", (req, res) => {
   enquiries.push({
     name,
     email,
+    phone,
     message,
     class: className || "N/A",
     subject: subject || "N/A",
@@ -42,7 +44,7 @@ app.post("/enquiry", (req, res) => {
   res.json({ status: "success", message: "Enquiry saved!" });
 });
 
-// Display enquiries in a styled HTML dashboard
+// Show all enquiries in a nice table
 app.get("/enquiries", (req, res) => {
   let enquiries = [];
   try {
@@ -55,6 +57,7 @@ app.get("/enquiries", (req, res) => {
     <tr>
       <td>${e.name}</td>
       <td>${e.email}</td>
+      <td>${e.phone || "N/A"}</td>
       <td>${e.class}</td>
       <td>${e.subject}</td>
       <td>${e.message}</td>
@@ -70,7 +73,7 @@ app.get("/enquiries", (req, res) => {
     <title>SmartLearn Enquiries</title>
     <style>
       body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
-      .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+      .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
       h1 { text-align: center; color: #27ae60; }
       table { width: 100%; border-collapse: collapse; margin-top: 20px; }
       th, td { padding: 10px 14px; border-bottom: 1px solid #ddd; text-align: left; }
@@ -87,6 +90,7 @@ app.get("/enquiries", (req, res) => {
           <tr>
             <th>Name</th>
             <th>Email</th>
+            <th>Phone</th>
             <th>Class</th>
             <th>Subject</th>
             <th>Message</th>
@@ -94,7 +98,7 @@ app.get("/enquiries", (req, res) => {
           </tr>
         </thead>
         <tbody>
-          ${rows || `<tr><td colspan="6" class="no-data">No enquiries yet</td></tr>`}
+          ${rows || `<tr><td colspan="7" class="no-data">No enquiries yet</td></tr>`}
         </tbody>
       </table>
     </div>
