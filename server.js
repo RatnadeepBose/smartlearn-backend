@@ -6,16 +6,11 @@ const bodyParser = require("body-parser");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-let enquiries = []; // In-memory storage
+let enquiries = []; // Memory storage
 
-// ✅ Allow requests from your frontend
-app.use(cors({
-  origin: "https://ratnadeepbose.github.io"
-}));
-
+app.use(cors({ origin: "https://ratnadeepbose.github.io" }));
 app.use(bodyParser.json());
 
-// ✅ Enquiry endpoint
 app.post("/enquiry", (req, res) => {
   const { name, email, phone, studentClass, subject, message } = req.body;
 
@@ -27,34 +22,62 @@ app.post("/enquiry", (req, res) => {
     name,
     email,
     phone,
-    class: studentClass, // ✅ store class properly
+    class: studentClass,
     subject,
     message,
     date: new Date()
   };
 
   enquiries.push(enquiry);
-  console.log("New enquiry received:", enquiry);
-  res.json({ status: "success", message: "Enquiry received!" });
+  console.log("✅ New Enquiry:", enquiry);
+  res.json({ status: "success", message: "Enquiry received successfully!" });
 });
 
-// ✅ Beautiful HTML Table for /enquiries
 app.get("/enquiries", (req, res) => {
   res.send(`
     <html>
       <head>
         <title>SmartLearn Enquiries</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
-          h1 { text-align: center; }
-          table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-          th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-          th { background-color: #222; color: white; }
-          tr:nth-child(even) { background: #f2f2f2; }
-          .class-6-8 { background-color: #d4f7d4; } /* Green for 6-8 */
-          .class-9-10 { background-color: #d4e8f7; } /* Blue for 9-10 */
-          .class-11-12 { background-color: #fff1d6; } /* Orange for 11-12 */
-          .missing { color: red; font-weight: bold; }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f7f7f7;
+          }
+          h1 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+          }
+          th {
+            background-color: #222;
+            color: white;
+          }
+          tr:nth-child(even) { background: #f9f9f9; }
+
+          /* 🎨 Class-based Colors */
+          .class-6 { background-color: #d6f7d6; } /* Light Green */
+          .class-7 { background-color: #bfffd4; } /* Mint Green */
+          .class-8 { background-color: #aff7ef; } /* Aqua */
+          .class-9 { background-color: #d6e4ff; } /* Light Blue */
+          .class-10 { background-color: #d9c6ff; } /* Lavender */
+          .class-11 { background-color: #ffe4b2; } /* Light Orange */
+          .class-12 { background-color: #ffcccc; } /* Soft Red */
+
+          .missing {
+            color: red;
+            font-weight: bold;
+          }
         </style>
       </head>
       <body>
@@ -69,32 +92,28 @@ app.get("/enquiries", (req, res) => {
             <th>Message</th>
             <th>Date</th>
           </tr>
-          ${enquiries.map(e => `
-            <tr class="${
-              e.class >= 6 && e.class <= 8 ? "class-6-8" :
-              e.class >= 9 && e.class <= 10 ? "class-9-10" :
-              e.class >= 11 && e.class <= 12 ? "class-11-12" : ""
-            }">
-              <td>${e.name || '<span class="missing">❌</span>'}</td>
-              <td>${e.email || '<span class="missing">❌</span>'}</td>
-              <td>${e.phone || '<span class="missing">❌</span>'}</td>
-              <td>${e.class || '<span class="missing">❌</span>'}</td>
-              <td>${e.subject || '<span class="missing">❌</span>'}</td>
-              <td>${e.message || '<span class="missing">❌</span>'}</td>
-              <td>${new Date(e.date).toLocaleString()}</td>
-            </tr>
-          `).join("")}
+          ${enquiries.map(e => {
+            const cls = e.class ? `class-${e.class}` : "";
+            return `
+              <tr class="${cls}">
+                <td>${e.name || '<span class="missing">❌</span>'}</td>
+                <td>${e.email || '<span class="missing">❌</span>'}</td>
+                <td>${e.phone || '<span class="missing">❌</span>'}</td>
+                <td>${e.class || '<span class="missing">❌</span>'}</td>
+                <td>${e.subject || '<span class="missing">❌</span>'}</td>
+                <td>${e.message || '<span class="missing">❌</span>'}</td>
+                <td>${new Date(e.date).toLocaleString()}</td>
+              </tr>
+            `;
+          }).join("")}
         </table>
       </body>
     </html>
   `);
 });
 
-// ✅ Root route
 app.get("/", (req, res) => {
-  res.send("SmartLearn Backend is running!");
+  res.send("SmartLearn Backend is running 🚀");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
