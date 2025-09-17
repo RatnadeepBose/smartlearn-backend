@@ -2,7 +2,6 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,83 +9,85 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
   origin: "https://ratnadeepbose.github.io"
 }));
+
 app.use(bodyParser.json());
 
-// Handle enquiry submissions
+// Temporary in-memory storage
+let enquiries = [];
+
+// POST /enquiry - Save enquiry
 app.post("/enquiry", (req, res) => {
-  const { name, email, phone, message, className, subject } = req.body;
+  const { name, email, phone, class: studentClass, subject, message } = req.body;
 
-  // Validate mandatory fields
-  if (!name || !email || !phone || !message) {
-    return res.status(400).json({ status: "error", message: "Name, Email, Phone, and Message are required!" });
+  if (!name || !email || !phone || !studentClass || !subject || !message) {
+    return res.status(400).json({ status: "error", message: "All fields are required" });
   }
 
-  let enquiries = [];
-  try {
-    enquiries = JSON.parse(fs.readFileSync("enquiries.json"));
-  } catch {
-    enquiries = [];
-  }
-
-  enquiries.push({
+  const enquiry = {
     name,
     email,
     phone,
+    class: studentClass,
+    subject,
     message,
-    class: className || "N/A",
-    subject: subject || "N/A",
-    date: new Date().toLocaleString()
-  });
+    date: new Date()
+  };
 
-  fs.writeFileSync("enquiries.json", JSON.stringify(enquiries, null, 2));
-
-  console.log("✅ New enquiry saved:", req.body);
-  res.json({ status: "success", message: "Enquiry saved!" });
+  enquiries.push(enquiry);
+  console.log("✅ Enquiry received:", enquiry);
+  res.json({ status: "success", message: "Enquiry received!" });
 });
 
-// Show all enquiries in a nice table
+// GET /enquiries - Show all enquiries in a beautiful table
 app.get("/enquiries", (req, res) => {
-  let enquiries = [];
-  try {
-    enquiries = JSON.parse(fs.readFileSync("enquiries.json"));
-  } catch {
-    enquiries = [];
-  }
-
-  let rows = enquiries.map(e => `
-    <tr>
-      <td>${e.name}</td>
-      <td>${e.email}</td>
-      <td>${e.phone || "N/A"}</td>
-      <td>${e.class}</td>
-      <td>${e.subject}</td>
-      <td>${e.message}</td>
-      <td>${e.date}</td>
-    </tr>
-  `).join("");
-
   const html = `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>SmartLearn Enquiries</title>
-    <style>
-      body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
-      .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-      h1 { text-align: center; color: #27ae60; }
-      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-      th, td { padding: 10px 14px; border-bottom: 1px solid #ddd; text-align: left; }
-      th { background: #27ae60; color: white; }
-      tr:hover { background: #f9f9f9; }
-      .no-data { text-align: center; padding: 20px; color: #888; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>📋 SmartLearn Enquiries</h1>
-      <table>
-        <thead>
+  <html>
+    <head>
+      <title>Enquiries - SmartLearnAcademy</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          background: #f4f4f4;
+          padding: 20px;
+          color: #333;
+        }
+        h1 {
+          text-align: center;
+          margin-bottom: 20px;
+          color: #2c3e50;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+          padding: 12px 15px;
+          text-align: left;
+          border-bottom: 1px solid #ddd;
+        }
+        th {
+          background: #27ae60;
+          color: white;
+          text-transform: uppercase;
+          font-size: 14px;
+        }
+        tr:hover {
+          background: #f1f1f1;
+        }
+        .class-6-8 { background-color: #d4edda; }  /* Light green */
+        .class-9-10 { background-color: #dbeafe; } /* Light blue */
+        .class-11-12 { background-color: #fff3cd; } /* Light yellow */
+      </style>
+    </head>
+    <body>
+      <h1>📋 Student Enquiries</h1>
+      ${
+        enquiries.length === 0 
+        ? "<p style='text-align:center;'>No enquiries yet.</p>" 
+        : `
+        <table>
           <tr>
             <th>Name</th>
             <th>Email</th>
@@ -96,16 +97,28 @@ app.get("/enquiries", (req, res) => {
             <th>Message</th>
             <th>Date</th>
           </tr>
-        </thead>
-        <tbody>
-          ${rows || `<tr><td colspan="7" class="no-data">No enquiries yet</td></tr>`}
-        </tbody>
-      </table>
-    </div>
-  </body>
-  </html>
-  `;
+          ${enquiries.map(e => {
+            let classCategory = "";
+            if (["6","7","8"].includes(e.class)) classCategory = "class-6-8";
+            else if (["9","10"].includes(e.class)) classCategory = "class-9-10";
+            else if (["11","12"].includes(e.class)) classCategory = "class-11-12";
 
+            return `
+              <tr class="${classCategory}">
+                <td>${e.name}</td>
+                <td>${e.email}</td>
+                <td>${e.phone}</td>
+                <td>${e.class}</td>
+                <td>${e.subject}</td>
+                <td>${e.message}</td>
+                <td>${new Date(e.date).toLocaleString()}</td>
+              </tr>`;
+          }).join("")}
+        </table>`
+      }
+    </body>
+  </html>`;
+  
   res.send(html);
 });
 
@@ -114,4 +127,5 @@ app.get("/", (req, res) => {
   res.send("✅ SmartLearn Backend is running!");
 });
 
+// Start server
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
