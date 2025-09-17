@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,7 +14,7 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Enquiry endpoint
+// Enquiry endpoint - save to file
 app.post("/enquiry", (req, res) => {
   const { name, email, message } = req.body;
 
@@ -21,8 +22,34 @@ app.post("/enquiry", (req, res) => {
     return res.status(400).json({ status: "error", message: "All fields required" });
   }
 
+  // Read existing enquiries
+  let enquiries = [];
+  try {
+    enquiries = JSON.parse(fs.readFileSync("enquiries.json"));
+  } catch (err) {
+    enquiries = [];
+  }
+
+  // Add new enquiry
+  enquiries.push({ name, email, message, date: new Date().toISOString() });
+
+  // Save back to file
+  fs.writeFileSync("enquiries.json", JSON.stringify(enquiries, null, 2));
+
   console.log("Enquiry received:", req.body);
-  res.json({ status: "success", message: "Enquiry received!" });
+  res.json({ status: "success", message: "Enquiry saved!" });
+});
+
+// Endpoint to fetch all enquiries
+app.get("/enquiries", (req, res) => {
+  let enquiries = [];
+  try {
+    enquiries = JSON.parse(fs.readFileSync("enquiries.json"));
+  } catch (err) {
+    enquiries = [];
+  }
+
+  res.json(enquiries);
 });
 
 // Root endpoint
@@ -30,6 +57,4 @@ app.get("/", (req, res) => {
   res.send("SmartLearn Backend is running!");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
