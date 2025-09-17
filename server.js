@@ -1,30 +1,35 @@
 // server.js
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Allow requests from frontend
+app.use(cors({
+  origin: "https://ratnadeepbose.github.io"
+}));
+
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-// Test route
-app.get('/', (req, res) => {
-  res.send('SmartLearn Backend is running!');
-});
-
-// Example route for contact form
-app.post('/contact', (req, res) => {
+// Enquiry endpoint
+app.post("/enquiry", (req, res) => {
   const { name, email, message } = req.body;
-  // You can add nodemailer or DB storage here
-  console.log(`Received contact: ${name}, ${email}, ${message}`);
-  res.json({ status: 'success', message: 'Message received!' });
+
+  if(!name || !email || !message){
+    return res.status(400).json({ status: "error", message: "All fields required" });
+  }
+
+  console.log("Enquiry received:", req.body);
+  res.json({ status: "success", message: "Enquiry received!" });
 });
 
-// Start server
+// Root endpoint
+app.get("/", (req, res) => {
+  res.send("SmartLearn Backend is running!");
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
